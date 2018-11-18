@@ -1,0 +1,2 @@
+fft_x_range(Time)	:	0	to	3
+fft_y_range(Amp)	:	0	to	0.06
