@@ -26,13 +26,29 @@ ESD = Y * Y
 
 freq = freq[range(int(n/2))]
 Y = Y[range(int(n/2))]
-ESD = ESD[range(int(n/2))]
+ESD = ESD[range(1,int(n/2))]
+np.insert(ESD,0,0)
 fig, ax = plt.subplots(2,1)
-
+#Export Summary
+for i in range(0, len(data.dlist)):
+    sqsum = sqsum +pow((data.dlist[i] - 1),2)
+rms = pow(sqsum,0.5)
+f = open("summary.csv", 'w')
+f.write('rms value,\t')
+f.write(str(rms) + '\n')
+f.write('Maximum Acc(g),\t')
+f.write(str(max(data.dlist)) + '\n')
+f.write('ESD max,\t')
+f.write(str(max(ESD)) + '\n')
+f.write('ESD_max freq,\t')
+f.write(str(freq[np.where(ESD == max(ESD))[0]])+'\n')
+f.close()
+#Draw Acc Plots
 ax[0].plot(data.time, data.dlist)
 ax[0].set_xlabel('Time($sec$)')
 ax[0].set_ylabel('Acc(g)')
 ax[0].grid(True)
+#Draw FFT 
 
 for i in range(0,int(len(cfg.listline)/4)):
     ax[1].set_xlim([cfg.xstart[i],cfg.xend[i]])
@@ -43,6 +59,7 @@ for i in range(0,int(len(cfg.listline)/4)):
     ax[1].grid(True)    
     plt.savefig("Acc_FFT_data" + str(i) + ".png", dpi=300)
     ax[1].cla()
+#Draw ESD Plots
 for i in range(int(len(cfg.listline)/4),int(len(cfg.listline)/2)):
     ax[1].set_xlim([cfg.xstart[i],cfg.xend[i]])
     ax[1].set_ylim([cfg.ystart[i],cfg.yend[i]])
@@ -52,12 +69,3 @@ for i in range(int(len(cfg.listline)/4),int(len(cfg.listline)/2)):
     ax[1].grid(True)    
     plt.savefig("ESD_data" + str(i) + ".png", dpi=300)
     ax[1].cla()
-
-for i in range(0, len(data.dlist)):
-    sqsum = sqsum +pow((data.dlist[i] - 1),2)
-rms = pow(sqsum,0.5)
-f = open("summary.csv", 'w')
-f.write('rms value,\t')
-f.write(str(rms) + '\n')
-f.close()
-
