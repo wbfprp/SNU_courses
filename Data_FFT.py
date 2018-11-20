@@ -2,70 +2,62 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import math
+from readcfg import Configuration as Cfg
+from readdata import Data
 
-f = open("data.txt", 'r')
-dlist = []
-timese = []
-listline = []
+cfg = Cfg()
+data = Data()
+data._readdata()
+cfg._readcfg()
 
-while(True):
-    line = f.readline()
-    if (line == ""):
-        break    
-    timese.append(line.split()[0])
-    dlist.append(line.split()[1])
-f.close()
-n = len(timese)
-timese = [float (i)/1000 for i in timese]
-dlist = [float (i) for i in dlist]
-dt = (timese[n-1]-timese[0])/n
+freq = []
+rms = 0.0
+sqsum = 0.0
+n = data.n
+dt = (data.time[n-1]-data.time[0])/n
 fs = 1/dt
 te = n*dt
-
-#plt.figure(num=1,dpi=1000,facecolor='white')
-#plt.plot(timese,dlist,'r')
-#plt.xlim(timese[0], timese[len(timese)-1])
-#plt.xlabel('time($sec$)')
-#plt.ylabel('Acc(g)')
-#plt.savefig("./test_figure1.png",dpi=3000)
-#timese.pop(0)
-#dlist.pop(0)
-#timese.pop(0)
-#dlist.pop(0)
-NFFT = n
-k = np.arange(NFFT)
+k = np.arange(n)
 T = n/fs
 freq = k/T
+Y = np.fft.fft(data.dlist)/n
+ESD = []
+ESD = Y * Y
+
 freq = freq[range(int(n/2))]
-
-Y = np.fft.fft(dlist)/n
 Y = Y[range(int(n/2))]
+ESD = ESD[range(int(n/2))]
+fig, ax = plt.subplots(2,1)
 
-fig, ax = plt.subplots(2, 1)
-ax[0].plot(timese, dlist)
+ax[0].plot(data.time, data.dlist)
 ax[0].set_xlabel('Time($sec$)')
 ax[0].set_ylabel('Acc(g)')
 ax[0].grid(True)
-#ax[1].plot(freq, abs(Y))
-#ax[1].plot(freq, abs(Y), color='c', linestyle = 'solid') 
 
-f = open("config.txt",'r')
-while(True):
-    line=f.readline()
-    if (line == ""):
-        break  
-    listline.append(line)
-xstart=(float)(listline[0].split()[2])
-xend=(float)(listline[0].split()[4])
-ystart=(float)(listline[1].split()[2])
-yend=(float)(listline[1].split()[4])
+for i in range(0,int(len(cfg.listline)/4)):
+    ax[1].set_xlim([cfg.xstart[i],cfg.xend[i]])
+    ax[1].set_ylim([cfg.ystart[i],cfg.yend[i]])
+    ax[1].set_xlabel('Freq (Hz)')
+    ax[1].set_ylabel('ESD (g^2/Hz)')
+    ax[1].vlines(freq, [0], abs(Y), colors='b')
+    ax[1].grid(True)    
+    plt.savefig("Acc_FFT_data" + str(i) + ".png", dpi=300)
+    ax[1].cla()
+for i in range(int(len(cfg.listline)/4),int(len(cfg.listline)/2)):
+    ax[1].set_xlim([cfg.xstart[i],cfg.xend[i]])
+    ax[1].set_ylim([cfg.ystart[i],cfg.yend[i]])
+    ax[1].set_xlabel('Freq (Hz)')
+    ax[1].set_ylabel('ESD g^2')    
+    ax[1].vlines(freq, [0], abs(ESD), colors='b')
+    ax[1].grid(True)    
+    plt.savefig("ESD_data" + str(i) + ".png", dpi=300)
+    ax[1].cla()
 
-ax[1].set_xlim([xstart,xend])
-ax[1].set_ylim([ystart,yend])
-ax[1].set_xlabel('Freq (Hz)')
-ax[1].set_ylabel('AMP')
-ax[1].vlines(freq, [0], abs(Y), colors='b')
-ax[1].grid(True)
-plt.savefig("data.png",dpi=300)
-plt.show()
+for i in range(0, len(data.dlist)):
+    sqsum = sqsum +pow((data.dlist[i] - 1),2)
+rms = pow(sqsum,0.5)
+f = open("summary.csv", 'w')
+f.write('rms value,\t')
+f.write(str(rms) + '\n')
+f.close()
 
